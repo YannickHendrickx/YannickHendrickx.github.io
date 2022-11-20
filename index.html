@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>CoderDojo puntensysteem</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="Yannick Hendrickx">
+    <link rel="stylesheet" href="stylesheet.css">
+    <script defer src="https://unpkg.com/alpinejs@3.5.0/dist/cdn.min.js"></script>
+  </head>
+  <body>
+    <h1>CoderDojo puntensysteem</h1>
+    <hr>
+    <!-- GET request for all students -->
+    <p>Get all students</p>
+        <div x-data="{
+            responsedata: null,
+            async getStudent() {
+                this.responsedata = await (await fetch('https://system-service-yannickhendrickx.cloud.okteto.net/students/all')).json();
+                let students = document.getElementById('students');
+                students.innerHTML = '';
+                for (let i = 0; i < this.responsedata.length; i++) {
+                    let li = document.createElement('li');
+                    li.innerHTML = this.responsedata[i].name;
+                    students.appendChild(li);
+                }
+            }
+        }">
+            <button x-on:click="getStudent">Get all students</button>
+            <ul id="students"></ul>
+        </div>
+    <!-- GET request for all subjects and display them in an un-->
+    <p>Get all subjects</p>
+        <div x-data="{
+            responsedata: null,
+            async getSubject() {
+                this.responsedata = await (await fetch('https://system-service-yannickhendrickx.cloud.okteto.net/subjects/')).json();
+                let subjects = document.getElementById('subjects');
+                subjects.innerHTML = '';
+                for (let i = 0; i < this.responsedata.length; i++) {
+                    let li = document.createElement('li');
+                    li.innerHTML = this.responsedata[i].subjectName;
+                    subjects.appendChild(li);
+                }
+            }
+        }">
+            <button x-on:click="getSubject">Get all subjects</button>
+            <ul id="subjects"></ul>
+        </div>
+      <!-- POST request for adding students -->
+      <p>Add a new student to the application</p>
+      <div x-data="{
+          responsedata: null,
+          newstudent: null,
+          async addStudent() {
+              this.responsedata = await (await fetch('https://system-service-yannickhendrickx.cloud.okteto.net/students/', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                      name: this.newstudent
+                  }),
+                  headers: {
+                      'Content-type': 'application/json; charset=UTF-8',
+                  },
+              })).json();
+          },
+      }">
+          <input type="text" x-model="newstudent">
+          <button x-on:click="addStudent">Add student</button>
+          <p> New student added: <span x-text="responsedata.name"></span></p>
+      </div>
+  </body>
+</html>
