@@ -1,71 +1,494 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>CoderDojo puntensysteem</title>
-    <meta charset="UTF-8">
-    <meta name="author" content="Yannick Hendrickx">
-    <link rel="stylesheet" href="stylesheet.css">
-    <script defer src="https://unpkg.com/alpinejs@3.5.0/dist/cdn.min.js"></script>
-  </head>
-  <body>
-    <h1>CoderDojo puntensysteem</h1>
-    <hr>
-    <!-- GET request for all students -->
-    <p>Get all students</p>
-        <div x-data="{
-            responsedata: null,
-            async getStudent() {
-                this.responsedata = await (await fetch('https://system-service-yannickhendrickx.cloud.okteto.net/students/all')).json();
-                let students = document.getElementById('students');
-                students.innerHTML = '';
-                for (let i = 0; i < this.responsedata.length; i++) {
-                    let li = document.createElement('li');
-                    li.innerHTML = this.responsedata[i].name;
-                    students.appendChild(li);
+    <head>
+        <title>CoderDojo Coolest Projects</title>
+        <meta charset="UTF-8">
+        <meta name="author" content="Yannick Hendrickx">
+        <script defer src="https://unpkg.com/alpinejs@3.5.0/dist/cdn.min.js"></script>
+        
+        <style>
+            .endpoint {
+                border: 1px solid #000;
+                border-radius: 16px;
+                padding: 10px;
+                background-color: #a8dadc;
+                text-align: left;
+                width: 570px;
+            }
+            #page {
+                
+            }
+            #logout > .endpoint {
+                color: #ffffff;
+                background-color: #1d3557;
+            }
+            #header {
+                color: #ffffff;
+            }
+            h1 {
+                padding-left: 10px;
+            }
+            body {
+                background-color: #457b9d;
+            }
+            #students, #coaches, #projects, #student, #student > ul {
+                list-style: none;
+            }
+            #demo {
+                color: #03045e;
+                font-weight: bold;
+            }
+            .hidden {
+                display: none;
+            }
+            .visible {
+                display: block;
+            }
+            #public, #back {
+                border: 1px solid #000;
+                border-radius: 16px;
+                padding: 10px;
+                color: #ffffff;
+                background-color: #1d3557;
+                text-align: left;
+                width: 570px;
+            }
+        </style>
+        <script language="javascript">
+            function api() {
+                return 'https://system-service-yannickhendrickx.cloud.okteto.net';
+            }
+            function setCookie(cname, cvalue, exhours) {
+                const d = new Date();
+                d.setTime(d.getTime() + (exhours*60*60*1000));
+                let expires = 'expires='+ d.toUTCString();
+                document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/';
+                return '';
+            }
+            function getCookie(cname, refresh=true) {
+                let name = cname + '=';
+                let decodedCookie = decodeURIComponent(document.cookie);
+                let ca = decodedCookie.split(';');
+                for(let i = 0; i <ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                        c = c.substring(1);
+                    }
+                    if (c.indexOf(name) == 0) {
+                        value = c.substring(name.length, c.length)
+                        if(refresh) {
+                            setCookie(cname, value, 0.5);
+                        }
+                        return value;
+                    }
+                }
+                return '';
+            }
+            function delCookie(cname) {
+                const d = new Date();
+                d.setTime(d.getTime() -1);
+                let expires = 'expires=' + d.toUTCString();
+                document.cookie = cname + '="";' + expires + ';path=/';
+            }
+            
+            window.onload = function(e) {
+                let token = getCookie('token', false);
+                if( token == ''){
+                    let loginDiv = document.getElementById('login');
+                    loginDiv.classList.replace('hidden', 'visible');
+                } else {
+                    let actionsDiv = document.getElementById('actions');
+                    actionsDiv.classList.replace('hidden', 'visible');
+                    let backDiv = document.getElementById('back');
+                    backDiv.classList.add('hidden');
+                    let tokenInfo = document.getElementById('tokenInfo');
+                    tokenInfo.innerHTML = token;
                 }
             }
-        }">
-            <button x-on:click="getStudent">Get all students</button>
-            <ul id="students"></ul>
+        </script>
+        <script>
+            
+        </script>
+    </head>
+    <body><center>
+        <div id="header">
+            <img src="https://online.coolestprojects.org//packs/media/images/coolest_projects_inverse-f3ac05afa10d0a5aeb04e44934ac6db1.svg">
+            <h1>CoderDojo Coolest Projects</h1>
         </div>
-    <!-- GET request for all subjects and display them in an un-->
-    <p>Get all subjects</p>
-        <div x-data="{
-            responsedata: null,
-            async getSubject() {
-                this.responsedata = await (await fetch('https://system-service-yannickhendrickx.cloud.okteto.net/subjects/')).json();
-                let subjects = document.getElementById('subjects');
-                subjects.innerHTML = '';
-                for (let i = 0; i < this.responsedata.length; i++) {
-                    let li = document.createElement('li');
-                    li.innerHTML = this.responsedata[i].subjectName;
-                    subjects.appendChild(li);
-                }
-            }
-        }">
-            <button x-on:click="getSubject">Get all subjects</button>
-            <ul id="subjects"></ul>
+        <div id="page">
+            <div id="actions" class="hidden">
+                <!-- GET all students -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    async getStudents() {
+                        this.responsedata = await (
+                            await fetch(
+                                api() + '/students/all',
+                                {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-type': 'application/json; charset=UTF-8',
+                                        'Authorization': 'Bearer ' + getCookie('token')
+                                    }
+                                }
+                            )
+                        ).json();
+                        
+                        if(typeof this.responsedata.detail === 'undefined'){
+                            let students = document.getElementById('students');
+                            students.innerHTML = '';
+                            for (let i = 0; i < this.responsedata.length; i++) {
+                                let li = document.createElement('li');
+                                li.innerHTML = '[' + this.responsedata[i].id + '] ' + this.responsedata[i].name;
+                                students.appendChild(li);
+                            }
+                        } else {
+                            alert(this.responsedata.detail);
+                        }
+                    }
+                }">
+                    <p><strong>Get all students:</strong></p>
+                    <button x-on:click="getStudents">Get all students</button>
+                    <ul id="students"></ul>
+                </div>
+                <!-- GET student by id -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    idstudent: '1',
+                    async getStudent() {
+                        this.responsedata = await (
+                            await fetch(
+                                api() + '/students/' + this.idstudent,
+                                {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-type': 'application/json; charset=UTF-8',
+                                        'Authorization': 'Bearer ' + getCookie('token')
+                                    }
+                                }
+                            )
+                        ).json();
+                        
+                        if(typeof this.responsedata.detail === 'undefined'){
+                            let student = document.getElementById('student');
+                            student.innerHTML = '';
+                            let li = document.createElement('li');
+                            li.innerHTML = '[' + this.responsedata.id + '] ' + this.responsedata.name;
+                            student.appendChild(li);
+                            let projects = document.createElement('ul');
+                            student.appendChild(projects);
+                            for (let i = 0; i < this.responsedata.projects.length; i++) {
+                                let project = document.createElement('li');
+                                project.innerHTML = '[' + this.responsedata.projects[i].id + '] ' + this.responsedata.projects[i].projectName;
+                                projects.appendChild(project);
+                            }
+                        } else {
+                            alert(JSON.stringify(this.responsedata.detail));
+                        }
+                    }
+                }">
+                    <p><strong>Get specific student:</strong></p>
+                    <input type="text" x-model="idstudent">
+                    <button x-on:click="getStudent">Get student</button>
+                    <p><ul id="student"></ul></p>
+                </div>
+                <!-- POST request for adding students -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    newstudent: '',
+                    async addStudent() {
+                        this.responsedata = await (await fetch(api() + '/students/', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                name: this.newstudent
+                            }),
+                            headers: {
+                                'Content-type': 'application/json; charset=UTF-8',
+                                'Authorization': 'Bearer ' + getCookie('token')
+                            }
+                        })).json();
+                    },
+                }">
+                    <p><strong>Add a new student to the application:</strong></p>
+                    <input type="text" x-model="newstudent">
+                    <button x-on:click="addStudent">Add student</button>
+                    <p> New student added: <em><span x-text="responsedata.name"></span></em></p>
+                </div>
+                <!-- GET all coaches -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    async getCoaches() {
+                        this.responsedata = await (
+                            await fetch(
+                                api() + '/coaches/',
+                                {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-type': 'application/json; charset=UTF-8',
+                                        'Authorization': 'Bearer ' + getCookie('token')
+                                    }
+                                }
+                            )
+                        ).json();
+                        
+                        if(typeof this.responsedata.detail === 'undefined'){
+                            let coaches = document.getElementById('coaches');
+                            coaches.innerHTML = '';
+                            for (let i = 0; i < this.responsedata.length; i++) {
+                                let li = document.createElement('li');
+                                if(this.responsedata[i].is_active === true){
+                                    li.innerHTML = '[' + this.responsedata[i].id + '] ' + this.responsedata[i].name;
+                                } else {
+                                    li.innerHTML = '[' + this.responsedata[i].id + '] ' + this.responsedata[i].name + ' <em>(inactive)</em>';
+                                }
+                                coaches.appendChild(li);
+                            }
+                        } else {
+                            alert(JSON.stringify(this.responsedata.detail));
+                        }
+                    }
+                }">
+                    <p><strong>Get all coaches:</strong></p>
+                    <button x-on:click="getCoaches">Get all coaches</button>
+                    <p><ul id="coaches"></ul></p>
+                </div>
+                <!-- GET coach by id -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    idcoach: '1',
+                    async getCoach() {
+                        this.responsedata = await (
+                            await fetch(
+                                api() + '/coaches/' + this.idcoach,
+                                {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-type': 'application/json; charset=UTF-8',
+                                        'Authorization': 'Bearer ' + getCookie('token')
+                                    }
+                                }
+                            )
+                        ).json();
+                        
+                        if(typeof this.responsedata.detail === 'undefined'){
+                            let coach = document.getElementById('coach');
+                            coach.innerHTML = '';
+                            let li = document.createElement('li');
+                            li.innerHTML = '[' + this.responsedata.id + '] ' + this.responsedata.name;
+                            coach.appendChild(li);
+                        } else {
+                            alert(JSON.stringify(this.responsedata.detail));
+                        }
+                    }
+                }">
+                    <p><strong>Get specific coach:</strong></p>
+                    <input type="text" x-model="idcoach">
+                    <button x-on:click="getCoach">Get coach</button>
+                    <p><ul id="coach"></ul></p>
+                </div>
+                <!-- POST request for creating new coach -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    newcoach: '',
+                    password: '',
+                    async addCoach() {
+                        this.responsedata = await (await fetch(api() + '/coaches/', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                name: this.newcoach,
+                                password: this.password
+                            }),
+                            headers: {
+                                'Content-type': 'application/json; charset=UTF-8',
+                                'Authorization': 'Bearer ' + getCookie('token')
+                            }
+                        })).json();
+                    },
+                }">
+                    <p><strong>Add a new coach:</strong></p>
+                    <input type="text" x-model="newcoach">
+                    <input type="password" x-model="password">
+                    <button x-on:click="addCoach">Add coach</button>
+                    <p> New coach added: <em><span x-text="responsedata.name"></span></em></p>
+                </div>
+                <!-- GET request for getting all projects -->
+                <div class="endpoint" x-data="{
+                    responsedata: '',
+                    skip: 0,
+                    limit: 100,
+                    async getProjects() {
+                        this.responsedata = await (
+                            await fetch(
+                                api() + '/projects/?skip=' + this.skip + '&limit=' + this.limit,
+                                {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-type': 'application/json; charset=UTF-8'
+                                    }
+                                }
+                            )
+                        ).json();
+                        
+                        if(typeof this.responsedata.detail === 'undefined'){
+                            let projects = document.getElementById('projects');
+                            projects.innerHTML = '';
+                            for (let i = 0; i < this.responsedata.length; i++) {
+                                let li = document.createElement('li');
+                                li.innerHTML = '[' + this.responsedata[i].id + '] ' + this.responsedata[i].projectName;
+                                projects.appendChild(li);
+                            }
+                        } else {
+                            alert(JSON.stringify(this.responsedata.detail));
+                        }
+                    }
+                }">
+                    <p><strong>Get all projects:</strong></p>
+                    <button x-on:click="getProjects">Get all projects</button>
+                    <p><ul id="projects"></ul></p>
+                </div>
+                
+                <!-- POST request for creating new project for user -->
+                <div class="endpoint auth" x-data="{
+                    responsedata: '',
+                    idstudent: '',
+                    projectname: '',
+                    async addProject() {
+                        this.responsedata = await (await fetch(api() + '/students/' + this.idstudent + '/projects/', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                projectName: this.projectname
+                            }),
+                            headers: {
+                                'Content-type': 'application/json; charset=UTF-8',
+                                'Authorization': 'Bearer ' + getCookie('token')
+                            }
+                        })).json();
+                    },
+                }">
+                    <p><strong>Add new project to student:</strong></p>
+                    <span>Student ID: </span><input type="text" x-model="idstudent">
+                    <span>Project Name: </span><input type="text" x-model="projectname">
+                    <button x-on:click="addProject">Add project</button>
+                    <p> New project added: <em><span x-text="responsedata.projectName"></span></em></p>
+                </div>
+                
+                <div id="logout">
+                    <!-- GET /coaches/me -->
+                    <div class="endpoint auth" x-data="{
+                        responsedata: '',
+                        async getCoachMe() {
+                            this.responsedata = await (
+                                await fetch(
+                                    api() + '/coaches/me',
+                                    {
+                                        method: 'GET',
+                                        headers: {
+                                            'Content-type': 'application/json; charset=UTF-8',
+                                            'Authorization': 'Bearer ' + getCookie('token')
+                                        }
+                                    }
+                                )
+                            ).json();
+                            
+                            if(typeof this.responsedata.detail === 'undefined'){
+                                alert(
+                                    '𝗡𝗮𝗺𝗲: \n' +
+                                    this.responsedata.name + '\n' +
+                                    '𝗧𝗼𝗸𝗲𝗻: \n' +
+                                    getCookie('token', false)
+                                );
+                            } else {
+                                alert(JSON.stringify(this.responsedata.detail));
+                            }
+                        }
+                    }">
+                        <span id="tokenInfo" style="display:none;"></span>
+                        <button x-on:click="getCoachMe">Current user info</button>
+                        <button onclick="delCookie('token'); window.location.reload();">Logout</button>
+                    </div>
+                    <div id="back">
+                        <button onclick="window.location.reload();">Back</button>
+                    </div>
+                </div>
+            </div> 
+            <div id="login" class="hidden">
+                <!-- POST /token -->
+                <div class="endpoint" x-data="{
+                    responsedata: '',
+                    username: '',
+                    password: '',
+                    async addToken() {
+                        let myHeaders = new Headers();
+                        myHeaders.append(
+                            'Content-Type',
+                            'application/x-www-form-urlencoded'
+                        );
+
+                        let urlencoded = new URLSearchParams();
+                        urlencoded.append('username', this.username);
+                        urlencoded.append('password', this.password);
+
+                        let requestOptions = {
+                            method: 'POST',
+                            headers: myHeaders,
+                            body: urlencoded,
+                            redirect: 'follow'
+                        };
+                            
+                        this.responsedata = await (
+                            await fetch(
+                                api() + '/token',
+                                requestOptions
+                            )
+                        ).json();
+                        
+                        if(typeof this.responsedata.detail === 'undefined'){
+                            setCookie(
+                                'token', 
+                                this.responsedata.access_token,
+                                0.5
+                            );
+                            if(getCookie('token', false) !== ''){
+                                let loginDiv = document.getElementById('login');
+                                loginDiv.classList.replace('visible', 'hidden');
+                                let actionsDiv = document.getElementById('actions');
+                                actionsDiv.classList.replace('hidden', 'visible');
+                                let backDiv = document.getElementById('back');
+                                backDiv.classList.add('hidden');
+                                let tokenInfo = document.getElementById('tokenInfo');
+                                tokenInfo.innerHTML = this.responsedata.access_token;
+                            } else {
+                                alert(
+                                    'Cookies might be disabled in your browser.\n'+
+                                    'Or you might be accessing this page as local file on Chrome.'
+                                );
+                            }
+                        } else {
+                            alert(JSON.stringify(this.responsedata.detail));
+                        }
+                    }
+                }">
+                    <p>Login to generate API token:</p>
+                    <input type="text" x-model="username">
+                    <input type="password" x-model="password">
+                    <button x-on:click="addToken">login</button>
+                </div>
+                <div id="public">
+                    <script>
+                        function show_public() {
+                            let auth = document.querySelectorAll('.auth');
+                            auth.forEach(element => {
+                                element.classList.add('hidden');
+                            });
+                            let loginDiv = document.getElementById('login');
+                            loginDiv.classList.replace('visible', 'hidden');
+                            let actionsDiv = document.getElementById('actions');
+                            actionsDiv.classList.replace('hidden', 'visible');
+                        }
+                    </script>
+                    <button onclick="show_public()">Public access only</button>
+                </div>
+            </div>
         </div>
-      <!-- POST request for adding students -->
-      <p>Add a new student to the application</p>
-      <div x-data="{
-          responsedata: null,
-          newstudent: null,
-          async addStudent() {
-              this.responsedata = await (await fetch('https://system-service-yannickhendrickx.cloud.okteto.net/students/', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                      name: this.newstudent
-                  }),
-                  headers: {
-                      'Content-type': 'application/json; charset=UTF-8',
-                  },
-              })).json();
-          },
-      }">
-          <input type="text" x-model="newstudent">
-          <button x-on:click="addStudent">Add student</button>
-          <p> New student added: <span x-text="responsedata.name"></span></p>
-      </div>
-  </body>
+    </center></body>
 </html>
